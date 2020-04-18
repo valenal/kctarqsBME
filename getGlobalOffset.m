@@ -103,7 +103,6 @@ function go=getGlobalOffset(obs,goScenario,goPlot)
             meanS = readtable('./INPUTS/LUR_Grid_meanS.csv');
             sMSd = table2array(meanS(:,2:3));
             
-            sMS  = sMSd;
             msRaw= meanS.lur;
             mssd = meanS.lur;
              

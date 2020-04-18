@@ -1,5 +1,8 @@
 function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covparam,nhmax,nsmax,dmax,order,options)  
 
+    %write test array to file option is set to off for now
+    writeTest2file = '0';
+
     % If needed create the xvals directory
     xvalDir=sprintf('4bmeXval');
     if exist(xvalDir)~=7
@@ -37,9 +40,22 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     me = zeros(CVO.NumTestSets,1);
     ve = zeros(CVO.NumTestSets,1);
     r2 = zeros(CVO.NumTestSets,1);
+    
+    if writeTest2file == '1'
+        testArr = zeros(sum(CVO.TestSize),3);
+    end
+    
+    testEnd = 0;
     for i = 1:CVO.NumTestSets
         trIdx = CVO.training(i); % training index
         teIdx = CVO.test(i);     % test index 
+        
+        if i == 1
+            testBeg = 1 ;
+        else
+            testBeg = testBeg + CVO.TestSize(i-1);
+        end
+        testEnd = testEnd + CVO.TestSize(i);
         
         pk = ph(teIdx,:);
 
@@ -61,6 +77,7 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         else
             ZkBMEm=xk+goh(teIdx,:);
         end
+        
         mae(i) = mean(abs(ZkBMEm-Z(teIdx)),'all');
         mse(i) = mean((ZkBMEm-Z(teIdx)).^2,'all');
         nrmse(i) = sqrt(mse(i))/sum(Z(teIdx));
@@ -69,6 +86,12 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         rcoef = corrcoef(ZkBMEm,Z(teIdx)) ;
         r2(i) =  rcoef(1,2)^2;
         
+        if writeTest2file == '1'
+            %write test set to array
+            testArr(testBeg:testEnd,1) = Z(teIdx);
+            testArr(testBeg:testEnd,2) = ZkBMEm;
+            testArr(testBeg:testEnd,3) = repmat(i,CVO.TestSize(i),1); 
+        end
     end 
     
     mae = mean(mae);
@@ -79,8 +102,13 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     r2std =  std(r2);
     r2    =  mean(r2);
     
-    outT = array2table([mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'MAE','ME','VE','MSE','NRMSE','R2','R2std'});
-    outT.SCN = obs.scn;
-    writetable(outT,sprintf('%s/xvalTable_%s.csv',xvalDir,obs.scn));
+    outS = array2table([mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'MAE','ME','VE','MSE','NRMSE','R2','R2std'});
+    outS.SCN = obs.scn;
+    writetable(outS,sprintf('%s/xvalTable_%s.csv',xvalDir,obs.scn));
     
+    %write test set array to csv
+    if writeTest2file == '1'
+        outT = array2table(testArr,'VariableNames',{'Obs','Pred','Fold'});
+        writetable(outT,sprintf('%s/testSets_%s.csv',xvalDir,obs.scn));
+    end
 end

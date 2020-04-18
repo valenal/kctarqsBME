@@ -12,7 +12,7 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
 
     softDat = '0'; %0,1
     runBME  = 1;
-    plotgo =  3;
+    plotgo =  0;
     plotcov = 1;
     plotbme = 1;
     %gtag = '40m_10min10'; %hardcoded
