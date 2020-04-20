@@ -86,12 +86,7 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             ZkBMEm=xk;
         else
             ZkBMEm=xk+goh(teIdx,:);
-        end
-        
-
-        %xk(isnan(xk))=0;%ask Marc. instead remove values 
-        %xk2(isnan(xk2))=0;%ask Marc. instead remove values 
-        
+        end        
         
         nanCount(i) = sum(isnan(ZkBMEm));
         mae(i) = mean(abs(ZkBMEm-Z(teIdx)),'all','omitnan');
