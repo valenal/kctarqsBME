@@ -55,7 +55,7 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
     ph = obs.XY;
     switch go.scenario
         case '0'
-            xh = obs.vals
+            xh = obs.vals;
         case {'M','MI'}
             xh = obs.vals-obs.CTOOLS;
         otherwise
