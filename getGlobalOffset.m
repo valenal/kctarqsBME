@@ -43,13 +43,13 @@ function go=getGlobalOffset(obs,goScenario,goPlot)
         
 
         switch goScenario
-            case '0',  % no GO ; not used
+            case '0'  % no GO ; not used
               goParam=[NaN NaN NaN NaN 0];
               densParam=[inclvoronoi inclgrid nxpix nypix densifytME tMEtimeStep];
               datXY = obs.XY;
               datvals = obs.vals;
-            case '1',
-              goParam=[20000 10000 20000 10000 0];
+            case '1'
+              goParam=[200000 100000 200000 100000 0];
               densParam=[inclvoronoi inclgrid nxpix nypix densifytME tMEtimeStep];
               datXY = obs.XY;
               datvals = obs.vals;
