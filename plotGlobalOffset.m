@@ -70,7 +70,7 @@ if goPlot>=1
 end
 
 % Map of the Raw spatial mean trend
-if goPlot>=2
+if goPlot>=2 && ~contains(obs.scn,'goL')
   figure;
   Property={'Marker','MarkerSize','MarkerEdgeColor'};
   Value ={'s',10,[0 0 0]};
@@ -79,15 +79,15 @@ if goPlot>=2
   colorbar;
   axis(ax);
   title(sprintf('Raw spatial trend of %s',obs.Ylabel));
-  xlabel('Longitude (deg.)');
-  ylabel('Latitude (deg.)');
+  xlabel('X (M)');
+  ylabel('Y (M)');
   hold on;
 end
 
 % Map of the smoothed spatial mean trend
-if false
+if goPlot>=2
   figure;
-  [xgkm ygkm]=meshgrid(ax(1):0.02:ax(2),ax(3):0.02:ax(4));
+  [xgkm ygkm]=meshgrid(ax(1):100:ax(2),ax(3):100:ax(4));
   [zgkm]=griddata(go.sMS(:,1),go.sMS(:,2),go.ms,xgkm,ygkm);
   zgkm=reshape(zgkm,size(xgkm));
   colormap(redyellow);
@@ -100,8 +100,8 @@ if false
   axis(ax);
   plot(go.sMSraw(:,1),go.sMSraw(:,2),'.k');
   title(sprintf('Smoothed spatial trend of %s',obs.Ylabel));
-  xlabel('Longitude (deg.)');
-  ylabel('Latitude (deg.)');
+  xlabel('X (M)');
+  ylabel('Y (M)');
 end
 
 
