@@ -2,6 +2,9 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
 
     %write test array to file option is set to off for now
     writeTest2file = '0';
+    
+    %estimate with fixed only but test at fixed and mobile
+    estFxTestFxMb = contains(obs.scn,'BOTH');
 
     % If needed create the xvals directory
     xvalDir=sprintf('4bmeXval');
@@ -31,15 +34,30 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             Z  = xh; %obs
     end
 
+    
+    
     %https://www.mathworks.com/help/stats/cvpartition-class.html
     CVO = cvpartition(xh,'k',10);
     %CVO = cvpartition(xh,'LeaveOut');
+    
+    nanCount = zeros(CVO.NumTestSets,1);
     mae = zeros(CVO.NumTestSets,1);
     mse = zeros(CVO.NumTestSets,1);
     nrmse = zeros(CVO.NumTestSets,1);
     me = zeros(CVO.NumTestSets,1);
     ve = zeros(CVO.NumTestSets,1);
     r2 = zeros(CVO.NumTestSets,1);
+    
+    if estFxTestFxMb
+        fxIdx = obs.idMS < 10; %fixed index
+        nanCountFX = zeros(CVO.NumTestSets,1);
+        maeFX = zeros(CVO.NumTestSets,1);
+        mseFX = zeros(CVO.NumTestSets,1);
+        nrmseFX = zeros(CVO.NumTestSets,1);
+        meFX = zeros(CVO.NumTestSets,1);
+        veFX = zeros(CVO.NumTestSets,1);
+        r2FX = zeros(CVO.NumTestSets,1);
+    end
     
     if writeTest2file == '1'
         testArr = zeros(sum(CVO.TestSize),3);
@@ -64,26 +82,24 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         [xk,vk]=krigingME(pk,ph(trIdx,:),cs,xh(trIdx,:),zs,vs, ...
             covmodel,covparam,nhmax,nsmax,dmax,order,options);
         
-        %intersection of training data and value of fixed data while
-        %keeping the test data the same.
-        %[xk,vk]=krigingME(pk,ph(trIdx,:),cs,xh(trIdx,:),zs,vs, ...
-        %    covmodel,covparam,nhmax,nsmax,dmax,order,options);
-        
-        xk(isnan(xk))=0;%ask Marc. instead remove values 
-        
-        %add offset
         if go.scenario == '0'
             ZkBMEm=xk;
         else
             ZkBMEm=xk+goh(teIdx,:);
         end
         
-        mae(i) = mean(abs(ZkBMEm-Z(teIdx)),'all');
-        mse(i) = mean((ZkBMEm-Z(teIdx)).^2,'all');
-        nrmse(i) = sqrt(mse(i))/sum(Z(teIdx));
-        me(i) = mean(ZkBMEm-Z(teIdx),'all');
+
+        %xk(isnan(xk))=0;%ask Marc. instead remove values 
+        %xk2(isnan(xk2))=0;%ask Marc. instead remove values 
+        
+        
+        nanCount(i) = sum(isnan(ZkBMEm));
+        mae(i) = mean(abs(ZkBMEm-Z(teIdx)),'all','omitnan');
+        mse(i) = mean((ZkBMEm-Z(teIdx)).^2,'all','omitnan');
+        nrmse(i) = sqrt(mse(i))/sum(Z(teIdx),'omitnan');
+        me(i) = mean(ZkBMEm-Z(teIdx),'all','omitnan');
         ve(i) = var(ZkBMEm-Z(teIdx),'omitnan');
-        rcoef = corrcoef(ZkBMEm,Z(teIdx)) ;
+        rcoef = corrcoef(ZkBMEm,Z(teIdx),'rows','complete') ;
         r2(i) =  rcoef(1,2)^2;
         
         if writeTest2file == '1'
@@ -92,8 +108,34 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             testArr(testBeg:testEnd,2) = ZkBMEm;
             testArr(testBeg:testEnd,3) = repmat(i,CVO.TestSize(i),1); 
         end
+        
+        if estFxTestFxMb
+            %intersection of training data and value of fixed data while
+            %keeping the test data the same.
+            [xk2,vk2]=krigingME(pk,ph(and(trIdx,fxIdx),:),cs, ...
+                xh(and(trIdx,fxIdx),:),zs,vs,covmodel,covparam, ...
+                nhmax,nsmax,dmax,order,options);
+            %add offset
+            if go.scenario == '0'
+                ZkBMEm2=xk2;
+            else
+                ZkBMEm2=xk2+goh(teIdx,:);
+            end
+            
+            nanCountFX(i) = sum(isnan(ZkBMEm2));
+            maeFX(i) = mean(abs(ZkBMEm2-Z(teIdx)),'all','omitnan');
+            mseFX(i) = mean((ZkBMEm2-Z(teIdx)).^2,'all','omitnan');
+            nrmseFX(i) = sqrt(mse(i))/sum(Z(teIdx),'omitnan');
+            meFX(i) = mean(ZkBMEm2-Z(teIdx),'all','omitnan');
+            veFX(i) = var(ZkBMEm2-Z(teIdx),'omitnan');
+            rcoefFX = corrcoef(ZkBMEm2,Z(teIdx),'rows','complete') ;
+            r2FX(i) =  rcoefFX(1,2)^2;
+            
+        end    
+        
     end 
     
+    nanCount = sum(nanCount);
     mae = mean(mae);
     mse = mean(mse);
     nrmse = mean(nrmse);
@@ -101,9 +143,25 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     ve  = mean(ve);
     r2std =  std(r2);
     r2    =  mean(r2);
-    
-    outS = array2table([mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'MAE','ME','VE','MSE','NRMSE','R2','R2std'});
+    outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std'});
     outS.SCN = obs.scn;
+    outS.TrainSubset = sprintf('%s','NA');
+    
+    if estFxTestFxMb
+        nanCountFX = sum(nanCountFX);
+        maeFX = mean(maeFX);
+        mseFX = mean(mseFX);
+        nrmseFX = mean(nrmseFX);
+        meFX  = mean(meFX);
+        veFX  = mean(veFX);
+        r2stdFX =  std(r2FX);
+        r2FX    =  mean(r2FX);
+        outSFX = array2table([nanCountFX,maeFX,meFX,veFX,mseFX,nrmseFX,r2FX,r2stdFX],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std'});
+        outSFX.SCN = obs.scn;
+        outSFX.TrainSubset = sprintf('%s','FX');
+        outS = outerjoin(outS,outSFX,'MergeKeys', true);
+    end
+       
     writetable(outS,sprintf('%s/xvalTable_%s.csv',xvalDir,obs.scn));
     
     %write test set array to csv
