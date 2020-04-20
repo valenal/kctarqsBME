@@ -109,7 +109,7 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         pk  = [pGrid.xLCC,pGrid.yLCC, tk*ones(size(pGrid,1))];
     
         %BMELIB2.0c_noMex/bmehrlib/krigingME.m 
-        [zk,vk]=krigingME(pk,ph,cs,xh,zs,vs,cov.covmodel,cov.covparam,nhmax,nsmax,dmax,order,options);
+        [zk,vk]=krigingME(pk,ph,cs,xh,xs,vs,cov.covmodel,cov.covparam,nhmax,nsmax,dmax,order,options);
         
         if go.scenario == '0'
             ZkBMEm=zk;
