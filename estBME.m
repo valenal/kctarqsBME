@@ -10,16 +10,16 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         fclose(fid);
     end
 
-    inpD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS/';
+    inD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS/';
     if estimateAtGrid
-        pGrid = readtable(sprintf('%s/GridSite.csv',inpD));
+        pGrid = readtable(sprintf('%s/GridSite.csv',inD));
         if go.scenario == 'M' %CTOOLS
-            gok = readtable(sprintf('%s/gridSite_ALL_%save.csv',inpD,obs.tave));
+            gok = readtable(sprintf('%s/gridSite_ALL_%save.csv',inD,obs.tave));
         elseif go.scenario == 'MI' %CTOOLS Inverse
             gok = readtable(sprintf('/proj/ie/proj/KC-TRAQS/utils/valenal/postProc/gridDATInv/CTOOLS_gridInv_%save.csv',obs.tave));
         end
     else
-        pGrid = gridC;
+        pGrid = obs.XY;
     end
 
     c01=cov.covparam{1}(1);
@@ -66,16 +66,19 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
     ph=ph(idx,:);
     xh=xh(idx);
 
-    if obs.sdat == '0'
+    if obs.sdat == 0
         softpdftype=1;
+        cs=[]; % matrix of coordinates for the soft data locations,with the same convention as for ck.
+        xs=[]; % xs vector of values for the mean of the soft data at the coordinates specified in cs.
+        vs=[]; % vs vector of values for the variance of the soft data at the coordinates specified in cs.
     else
         softpdftype=2;
-        % xs = obs.sdmean-stmeaninterpstv(go.sMS,go.tME,go.ms,go.mt,ph);
+        cs = obs.xy ;
+        xs = obs.sdmean-stmeaninterpstv(go.sMS,go.tME,go.ms,go.mt,ph);
+        vs = obs.sdvar;
     end
 
-    cs=[]; % matrix of coordinates for the soft data locations,with the same convention as for ck.
-    xs=[]; % xs vector of values for the mean of the soft data at the coordinates specified in cs.
-    vs=[]; % vs vector of values for the variance of the soft data at the coordinates specified in cs.
+    
     nl=[];
     limi=[];
     probdens=[];
@@ -85,26 +88,7 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
 
     for i=1:length(tkVec)
         tk=tkVec(i);
-        
-        % get date string in dt
-        if obs.tave == 'Y'
-            dt = 2018;
-        elseif obs.tave == 'M'
-            mth = mod(tk,12);
-            yr = (1970+fix(tk/12));
-
-            if mth == 00 
-                yr = yr - 1;
-                mth = 12;
-            end
-            dt = yr*100+mth;
-        elseif obs.tave == 'D'
-            dt = datestr(datetime(tk*24*3600, 'convertfrom','posixtime'),'yyyymmdd');
-        elseif obs.tave == 'H'
-            dt = datestr(datetime(tk*3600, 'convertfrom','posixtime'),'yyyymmddHH');
-        elseif obs.tave == '60s'
-            dt = datestr(datetime(tk*60, 'convertfrom','posixtime'),'yyyymmddHHMM');
-        end
+        dt = getdts(tk,obs.tave);
 
         pk  = [pGrid.xLCC,pGrid.yLCC, tk*ones(size(pGrid,1))];
     
