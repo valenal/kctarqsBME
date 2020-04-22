@@ -6,8 +6,9 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
     %eks  = 1 ; temporal range of exponential smoothing function (optional)
 
     run('/nas/longleaf/home/valenal/matlab/BMELIB2.0c_noMex/startup.m')
-
-
+    
+    %git update
+    
     tnum=str2double(tnum);
 
     if contains(oname, 'BOTH')
