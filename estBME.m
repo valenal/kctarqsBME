@@ -10,7 +10,8 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         fclose(fid);
     end
 
-    inD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS/';
+    %inD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS/';
+    inD = 'INPUTS/';
     if estimateAtGrid
         pGrid = readtable(sprintf('%s/GridSite.csv',inD));
         if go.scenario == 'M' %CTOOLS

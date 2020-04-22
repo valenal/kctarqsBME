@@ -5,7 +5,16 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
     %tnum = 1 ; which time step to run in episode
     %eks  = 1 ; temporal range of exponential smoothing function (optional)
 
-    run('/nas/longleaf/home/valenal/matlab/BMELIB2.0c_noMex/startup.m')
+    if nargin<1, tA='M'; end
+    if nargin<2, goScenario='L'; end
+    if nargin<3, oname='BOTH00'; end
+    if nargin<4, tnum='6'; end
+    if nargin<5, eks='1.5'; end
+    
+    if exist('krigingME')~=2
+      run('../BMELIB2.0c_noMex/startup.m')
+    end
+    % run('/nas/longleaf/home/valenal/matlab/BMELIB2.0c_noMex/startup.m')
     
     %git update
     
@@ -26,7 +35,8 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
 
 
     %%%%%%%%%% get OBS %%%%%%%%%%
-    inD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS';
+    inD = 'INPUTS';
+    % inD = '/proj/ie/proj/KC-TRAQS/utils/valenal/DataFusion/BME_KCTRAQS/INPUTS';
     inF = sprintf('%s/fixed_mobile40m_CTOOLS_%s.csv',inD,tA); 
 
     dat   = readtable(inF);
