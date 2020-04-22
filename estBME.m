@@ -84,7 +84,6 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
     limi=[];
     probdens=[];
     
-    %fix global offset is in STG 
     [mae,mse,nrmse,me,r2,r2std]= getBmeXval(obs,go,cs,xs,vs,cov.covmodel,cov.covparam,nhmax,nsmax,dmax,order,options);
 
     for i=1:length(tkVec)

@@ -29,9 +29,9 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             xh  = Z-goh; %residual
         case '0'
             ph = obs.XY  ;
-            xh = obs.vals; %obs
-            goh= 0; %offset
-            Z  = xh; %obs
+            Z  = obs.vals; %obs
+            goh= 0*Z; %offset
+            xh = Z-goh; %obs
     end
 
     
@@ -47,6 +47,8 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     me = zeros(CVO.NumTestSets,1);
     ve = zeros(CVO.NumTestSets,1);
     r2 = zeros(CVO.NumTestSets,1);
+    vo = zeros(CVO.NumTestSets,1);
+    vZ = zeros(CVO.NumTestSets,1);
     
     if estFxTestFxMb
         fxIdx = obs.idMS < 10; %fixed index
@@ -57,6 +59,8 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         meFX = zeros(CVO.NumTestSets,1);
         veFX = zeros(CVO.NumTestSets,1);
         r2FX = zeros(CVO.NumTestSets,1);
+        voFX = zeros(CVO.NumTestSets,1);
+        vZFX = zeros(CVO.NumTestSets,1);
     end
     
     if writeTest2file == '1'
@@ -91,11 +95,14 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         nanCount(i) = sum(isnan(ZkBMEm));
         mae(i) = mean(abs(ZkBMEm-Z(teIdx)),'all','omitnan');
         mse(i) = mean((ZkBMEm-Z(teIdx)).^2,'all','omitnan');
-        nrmse(i) = sqrt(mse(i))/sum(Z(teIdx),'omitnan');
+        nrmse(i) = sqrt(mse(i))/mean(Z(teIdx),'omitnan');
         me(i) = mean(ZkBMEm-Z(teIdx),'all','omitnan');
         ve(i) = var(ZkBMEm-Z(teIdx),'omitnan');
         rcoef = corrcoef(ZkBMEm,Z(teIdx),'rows','complete') ;
-        r2(i) =  rcoef(1,2)^2;
+        r2(i) = rcoef(1,2)^2;
+        vo(i) = var(Z(teIdx),'omitnan') ;
+        vZ(i) = var(ZkBMEm,'omitnan') ;
+        
         
         if writeTest2file == '1'
             %write test set to array
@@ -120,16 +127,19 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             nanCountFX(i) = sum(isnan(ZkBMEm2));
             maeFX(i) = mean(abs(ZkBMEm2-Z(teIdx)),'all','omitnan');
             mseFX(i) = mean((ZkBMEm2-Z(teIdx)).^2,'all','omitnan');
-            nrmseFX(i) = sqrt(mse(i))/sum(Z(teIdx),'omitnan');
+            nrmseFX(i) = sqrt(mseFX(i))/sum(Z(teIdx),'omitnan');
             meFX(i) = mean(ZkBMEm2-Z(teIdx),'all','omitnan');
             veFX(i) = var(ZkBMEm2-Z(teIdx),'omitnan');
             rcoefFX = corrcoef(ZkBMEm2,Z(teIdx),'rows','complete') ;
             r2FX(i) =  rcoefFX(1,2)^2;
+            vo(i) = var(Z(teIdx),'omitnan') ;
+            vZ(i) = var(ZkBMEm,'omitnan') ;
             
         end    
         
     end 
     
+    %keep information for each fold
     nanCount = sum(nanCount);
     mae = mean(mae);
     mse = mean(mse);
@@ -138,6 +148,8 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     ve  = mean(ve);
     r2std =  std(r2);
     r2    =  mean(r2);
+    %stacked r2
+    
     outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std'});
     outS.SCN = obs.scn;
     outS.TrainSubset = sprintf('%s','NA');

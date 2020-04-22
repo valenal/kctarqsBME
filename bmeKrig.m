@@ -63,7 +63,7 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
     obs.vals = dat.obs;
     obs.name = oname;
     obs.tave = tA;
-    obs.sdat = softDat;
+    obs.sdat = softDat; %0,1,2,3 (none,mobile,ctools,both)
     obs.eks  = str2double(eks);
     obs.Ylabel= 'BC (ug/m3)';
     obs.Yname = 'BC';
@@ -88,7 +88,7 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
         sdC = sdC(sdC.date==str2double(dt),:) ; 
         obs.sdxy   = [sdC.x,sdC.y,datS.dts]; 
         obs.sdmean = sdC.EC25;
-        obs.var = 0 ; %fix this !!
+        obs.sdvar = 0 ; %fix this !!
     elseif obs.sdat == 3 %mobile and CTOOLS
         %do nothing for now
     end
