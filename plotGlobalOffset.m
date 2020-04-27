@@ -1,7 +1,9 @@
 function plotGlobalOffset(obs,go,goPlot,yrange,tMEplot)
-% obs   scalar specifying the obs, or structure containing the obs data:
-%       scalar:  
-%         1 for CO, 2 LEAD_LC , 3 LEAD_STP, 4 NO2,  5 OZONE, 6 PM10, 7 PM25, 8 SO2
+% Todo: 
+% calculate statistics for GO
+% compate LUR R2 and MSE with and without intercept
+%
+% obs 
 %       structure:
 %         obs.name       char    CAP name
 %         obs.label      char    CAP name its unit

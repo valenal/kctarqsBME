@@ -1,4 +1,8 @@
 function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covparam,nhmax,nsmax,dmax,order,options)  
+    %ToDo: 
+    % 1. Add more statistics (check email) -
+    % 2. Keep Stats for eachfold - DONE
+    % 3. Crossvalidation in time and space -     
 
     %write test array to file option is set to off for now
     writeTest2file = '0';
@@ -39,6 +43,9 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     %https://www.mathworks.com/help/stats/cvpartition-class.html
     CVO = cvpartition(xh,'k',10);
     %CVO = cvpartition(xh,'LeaveOut');
+    
+    blank =  zeros(CVO.NumTestSets,1);
+    fold = (1:CVO.NumTestSets)'; 
     
     nanCount = zeros(CVO.NumTestSets,1);
     mae = zeros(CVO.NumTestSets,1);
@@ -140,33 +147,40 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     end 
     
     %keep information for each fold
-    nanCount = sum(nanCount);
-    mae = mean(mae);
-    mse = mean(mse);
-    nrmse = mean(nrmse);
-    me  = mean(me);
-    ve  = mean(ve);
+    nanCount0 = sum(nanCount);
+    mae0 = mean(mae);
+    mse0 = mean(mse);
+    nrmse0 = mean(nrmse);
+    me0  = mean(me);
+    ve0  = mean(ve);
     r2std =  std(r2);
-    r2    =  mean(r2);
+    r20    =  mean(r2);
     %stacked r2
     
-    outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,r2std],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std'});
-    outS.SCN = obs.scn;
-    outS.TrainSubset = sprintf('%s','NA');
+    outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+    outS0 = array2table([nanCount0,mae0,me0,ve0,mse0,nrmse0,r20,r2std,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+    outS = [outS;outS0];
+    outS.SCN  =  repmat(obs.scn, size(fold,1)+1, 1);
+    outS.TrainSubset = repmat({'None'}, size(fold,1)+1, 1);
     
     if estFxTestFxMb
-        nanCountFX = sum(nanCountFX);
-        maeFX = mean(maeFX);
-        mseFX = mean(mseFX);
-        nrmseFX = mean(nrmseFX);
-        meFX  = mean(meFX);
-        veFX  = mean(veFX);
+        nanCount0FX = sum(nanCountFX);
+        mae0FX = mean(maeFX);
+        mse0FX = mean(mseFX);
+        nrmse0FX = mean(nrmseFX);
+        me0FX  = mean(meFX);
+        ve0FX  = mean(veFX);
         r2stdFX =  std(r2FX);
-        r2FX    =  mean(r2FX);
-        outSFX = array2table([nanCountFX,maeFX,meFX,veFX,mseFX,nrmseFX,r2FX,r2stdFX],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std'});
-        outSFX.SCN = obs.scn;
-        outSFX.TrainSubset = sprintf('%s','FX');
-        outS = outerjoin(outS,outSFX,'MergeKeys', true);
+        r20FX    =  mean(r2FX);
+        outSFX = array2table([nanCountFX,maeFX,meFX,veFX,mseFX,nrmseFX,r2FX,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+        outS0FX = array2table([nanCount0FX,mae0FX,me0FX,ve0FX,mse0FX,nrmse0FX,r20FX,r2stdFX,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+        outSFX = [outSFX;outS0FX];
+        outSFX.SCN  =  repmat(obs.scn, size(fold,1)+1, 1);
+        outSFX.TrainSubset = repmat({'None'}, size(fold,1)+1, 1);
+        
+        outSFX.SCN = repmat(obs.scn, size(fold,1)+1, 1);
+        outSFX.TrainSubset = repmat({'Fixed'}, size(fold,1)+1, 1);
+        outS = [outS;outSFX]; 
     end
        
     writetable(outS,sprintf('%s/xvalTable_%s.csv',xvalDir,obs.scn));
