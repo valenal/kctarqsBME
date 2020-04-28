@@ -100,7 +100,11 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         elseif go.scenario == 'C'
             ZkBMEm=zk+go.gMean;
         elseif go.scenario == 'M'|| strcmp(go.scenario,'MI')
-            ZkBMEm=zk+gok(gok.date==str2double(dt),:).EC25;
+            if isa(gok.date,'double')
+                ZkBMEm=zk+gok(gok.date==str2double(dt),:).EC25;
+            else
+                ZkBMEm=zk+gok(gok.date==dt,:).EC25;
+            end
         else
             % Obtain ZkBMEm by adding the global offset to Xk
             gok=stmeaninterp(go.sMS,go.tME,go.ms,go.mt,pk(:,1:2),tk);

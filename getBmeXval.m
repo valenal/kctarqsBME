@@ -38,7 +38,8 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             xh = Z-goh; %obs
     end
 
-    groupType = 'cluster'; %k,cluster,month,
+    %groupType = 'cluster'; %k,cluster,month
+    groupType = 'month'; %k,cluster,month,
     switch groupType
         case {'cluster','month'}
             grp = obs.(groupType);
@@ -72,13 +73,13 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         r2FX = zeros(CVO.NumTestSets,1);
     end
     
-    %if writeTest2file == '1'
+
     %write test set to array
     testArr = zeros(sum(CVO.TestSize),3);
     if estFxTestFxMb
         testArr0 = zeros(sum(CVO.TestSize),1);
     end
-    %end
+
     
     testEnd = 0;
     for i = 1:CVO.NumTestSets
@@ -122,12 +123,12 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         rcoef = corrcoef(ZkBMEm,Z(teIdx),'rows','complete') ;
         r2(i) = rcoef(1,2)^2;
         
-        %if writeTest2file == '1'
-            %write test set to array
-            testArr(testBeg:testEnd,1) = Z(teIdx);
-            testArr(testBeg:testEnd,2) = ZkBMEm;
-            testArr(testBeg:testEnd,3) = repmat(i,CVO.TestSize(i),1); 
-        %end
+      
+        %write test set to array
+        testArr(testBeg:testEnd,1) = Z(teIdx);
+        testArr(testBeg:testEnd,2) = ZkBMEm;
+        testArr(testBeg:testEnd,3) = repmat(i,CVO.TestSize(i),1);
+
         
         if estFxTestFxMb
             %intersection of training data and value of fixed data while
