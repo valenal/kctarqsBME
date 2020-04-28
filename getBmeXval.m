@@ -1,8 +1,8 @@
 function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covparam,nhmax,nsmax,dmax,order,options)  
     %ToDo: 
-    % 1. Add more statistics (check email) -
+    % 1. Add more statistics (check email) - DONE
     % 2. Keep Stats for eachfold - DONE
-    % 3. Crossvalidation in time and space -     
+    % 3. Crossvalidation in time and space - DONE   
 
     %write test array to file option is set to off for now
     writeTest2file = '0';
@@ -38,11 +38,17 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             xh = Z-goh; %obs
     end
 
-    
-    
-    %https://www.mathworks.com/help/stats/cvpartition-class.html
-    CVO = cvpartition(xh,'k',10);
-    %CVO = cvpartition(xh,'LeaveOut');
+    groupType = 'cluster'; %k,cluster,month,
+    switch groupType
+        case {'cluster','month'}
+            grp = obs.(groupType);
+            CVO.uniqueGroup = unique(grp);
+            CVO.NumTestSets = size(CVO.uniqueGroup,1);
+            CVO.TestSize = histc(grp,CVO.uniqueGroup);
+        case 'k', CVO = cvpartition(xh,'k',10);
+        case 'LeaveOut', CVO = cvpartition(xh,'LeaveOut');
+
+    end
     
     blank =  zeros(CVO.NumTestSets,1);
     fold = (1:CVO.NumTestSets)'; 
@@ -54,8 +60,6 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     me = zeros(CVO.NumTestSets,1);
     ve = zeros(CVO.NumTestSets,1);
     r2 = zeros(CVO.NumTestSets,1);
-    vo = zeros(CVO.NumTestSets,1);
-    vZ = zeros(CVO.NumTestSets,1);
     
     if estFxTestFxMb
         fxIdx = obs.idMS < 10; %fixed index
@@ -66,18 +70,28 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         meFX = zeros(CVO.NumTestSets,1);
         veFX = zeros(CVO.NumTestSets,1);
         r2FX = zeros(CVO.NumTestSets,1);
-        voFX = zeros(CVO.NumTestSets,1);
-        vZFX = zeros(CVO.NumTestSets,1);
     end
     
-    if writeTest2file == '1'
-        testArr = zeros(sum(CVO.TestSize),3);
+    %if writeTest2file == '1'
+    %write test set to array
+    testArr = zeros(sum(CVO.TestSize),3);
+    if estFxTestFxMb
+        testArr0 = zeros(sum(CVO.TestSize),1);
     end
+    %end
     
     testEnd = 0;
     for i = 1:CVO.NumTestSets
-        trIdx = CVO.training(i); % training index
-        teIdx = CVO.test(i);     % test index 
+        
+        switch groupType
+            case {'cluster','month'}
+                grpNum = CVO.uniqueGroup(i);
+                trIdx = grpNum ~= grp; % training index
+                teIdx = grpNum == grp;     % test index 
+            otherwise
+                trIdx = CVO.training(i); % training index
+                teIdx = CVO.test(i);     % test index 
+        end
         
         if i == 1
             testBeg = 1 ;
@@ -107,16 +121,13 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         ve(i) = var(ZkBMEm-Z(teIdx),'omitnan');
         rcoef = corrcoef(ZkBMEm,Z(teIdx),'rows','complete') ;
         r2(i) = rcoef(1,2)^2;
-        vo(i) = var(Z(teIdx),'omitnan') ;
-        vZ(i) = var(ZkBMEm,'omitnan') ;
         
-        
-        if writeTest2file == '1'
+        %if writeTest2file == '1'
             %write test set to array
             testArr(testBeg:testEnd,1) = Z(teIdx);
             testArr(testBeg:testEnd,2) = ZkBMEm;
             testArr(testBeg:testEnd,3) = repmat(i,CVO.TestSize(i),1); 
-        end
+        %end
         
         if estFxTestFxMb
             %intersection of training data and value of fixed data while
@@ -139,14 +150,14 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             veFX(i) = var(ZkBMEm2-Z(teIdx),'omitnan');
             rcoefFX = corrcoef(ZkBMEm2,Z(teIdx),'rows','complete') ;
             r2FX(i) =  rcoefFX(1,2)^2;
-            vo(i) = var(Z(teIdx),'omitnan') ;
-            vZ(i) = var(ZkBMEm,'omitnan') ;
+            
+            %test set array
+            testArr0(testBeg:testEnd,1) = ZkBMEm2;
             
         end    
         
     end 
     
-    %keep information for each fold
     nanCount0 = sum(nanCount);
     mae0 = mean(mae);
     mse0 = mean(mse);
@@ -154,11 +165,19 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     me0  = mean(me);
     ve0  = mean(ve);
     r2std =  std(r2);
-    r20    =  mean(r2);
-    %stacked r2
+    r20   =  mean(r2);
+    rstk0 = corrcoef(testArr(:,2),testArr(:,1),'rows','complete') ;
+    r2stk0 =  rstk0(1,2)^2;
     
-    outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
-    outS0 = array2table([nanCount0,mae0,me0,ve0,mse0,nrmse0,r20,r2std,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+    mseb = mean((testArr(:,2)-testArr(:,1)).^2,'all','omitnan');
+    meb = mean((testArr(:,2)-testArr(:,1)),'all','omitnan');
+    vo = var(testArr(:,1),'omitnan') ;
+    vZ = var(testArr(:,2),'omitnan') ;
+    r2chk= ( (vo+vZ-(mseb-meb^2))/(2*sqrt(vo)*sqrt(vZ)) )^2;
+    %[b,bint,r,rint,stats] =regress(testArr(:,1),[testArr(:,2), 1+zeros(sum(CVO.TestSize),1)] );
+    
+    outS = array2table([nanCount,mae,me,ve,mse,nrmse,r2,blank,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','R2stk','Fold'});
+    outS0 = array2table([nanCount0,mae0,me0,ve0,mse0,nrmse0,r20,r2std,r2stk0,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','R2stk','Fold'});
     outS = [outS;outS0];
     outS.SCN  =  repmat(obs.scn, size(fold,1)+1, 1);
     outS.TrainSubset = repmat({'None'}, size(fold,1)+1, 1);
@@ -172,8 +191,10 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         ve0FX  = mean(veFX);
         r2stdFX =  std(r2FX);
         r20FX    =  mean(r2FX);
-        outSFX = array2table([nanCountFX,maeFX,meFX,veFX,mseFX,nrmseFX,r2FX,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
-        outS0FX = array2table([nanCount0FX,mae0FX,me0FX,ve0FX,mse0FX,nrmse0FX,r20FX,r2stdFX,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','Fold'});
+        rstk0FX = corrcoef(testArr0(:,1),testArr(:,1),'rows','complete') ;
+        r2stk0FX =  rstk0FX(1,2)^2;
+        outSFX = array2table([nanCountFX,maeFX,meFX,veFX,mseFX,nrmseFX,r2FX,blank,blank,fold],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','R2stk','Fold'});
+        outS0FX = array2table([nanCount0FX,mae0FX,me0FX,ve0FX,mse0FX,nrmse0FX,r20FX,r2stdFX,r2stk0FX,0],'VariableNames',{'NaNs','MAE','ME','VE','MSE','NRMSE','R2','R2std','R2stk','Fold'});
         outSFX = [outSFX;outS0FX];
         outSFX.SCN  =  repmat(obs.scn, size(fold,1)+1, 1);
         outSFX.TrainSubset = repmat({'None'}, size(fold,1)+1, 1);
@@ -183,11 +204,15 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
         outS = [outS;outSFX]; 
     end
        
-    writetable(outS,sprintf('%s/xvalTable_%s.csv',xvalDir,obs.scn));
+    writetable(outS,sprintf('%s/xvalTable_%s_%s.csv',xvalDir,obs.scn,groupType));
     
     %write test set array to csv
     if writeTest2file == '1'
-        outT = array2table(testArr,'VariableNames',{'Obs','Pred','Fold'});
-        writetable(outT,sprintf('%s/testSets_%s.csv',xvalDir,obs.scn));
+        if estFxTestFxMb
+            outT = array2table([testArr,testArr0],'VariableNames',{'Obs','Pred','Fold','Pred2'});
+        else
+            outT = array2table(testArr,'VariableNames',{'Obs','Pred','Fold'});
+        end
+        writetable(outT,sprintf('%s/testSets_%s_%s.csv',xvalDir,obs.scn,groupType));
     end
 end

@@ -67,6 +67,8 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
     obs.eks  = str2double(eks);
     obs.Ylabel= 'BC (ug/m3)';
     obs.Yname = 'BC';
+    obs.cluster = dat.GroupID;
+    obs.month = dat.month;
     
     switch obs.tave
         case 'Y', tkVecs = [48];
