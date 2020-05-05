@@ -100,11 +100,7 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         elseif go.scenario == 'C'
             ZkBMEm=zk+go.gMean;
         elseif go.scenario == 'M'|| strcmp(go.scenario,'MI')
-            if isa(gok.date,'double')
-                ZkBMEm=zk+gok(gok.date==str2double(dt),:).EC25;
-            else
-                ZkBMEm=zk+gok(gok.date==dt,:).EC25;
-            end
+            ZkBMEm=zk+gok(gok.date==dt,:).EC25;            
         else
             % Obtain ZkBMEm by adding the global offset to Xk
             gok=stmeaninterp(go.sMS,go.tME,go.ms,go.mt,pk(:,1:2),tk);
@@ -112,8 +108,9 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
         end
 
 
-        %summary(mat2dataset(XkBMEm))
-        dtstr = convertCharsToStrings(dt);
+        %summary(mat2dataset(XkBMEm))     
+        dtstr = num2str(dt);
+        dtstr = convertCharsToStrings(dtstr);
         outT = array2table([transpose(1:size(pk,1)),pk(:,1:2),repmat(dtstr, ...
         size(ZkBMEm,1),1),ZkBMEm,vk],'VariableNames',{'RecID','xLCC','yLCC','date','BC','var'});
         writetable(outT,sprintf('%s/bmeTable_%s_%s.csv',bmeDir,dtstr,obs.scn));
@@ -134,7 +131,7 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
             caxis([0, 2]);
             axis equal;
 
-        pngfilename=sprintf('plot_%i_%s.png',dt,obs.scn);
+        pngfilename=sprintf('plot_%s_%s.png',dtstr,obs.scn);
         %if exist([bmeDir '/' pngfilename])~=2
         saveas(f,sprintf('%s/%s',bmeDir,pngfilename))
         %end

@@ -129,6 +129,8 @@ function go=getGlobalOffset(obs,goScenario,goPlot)
         go.mt=mtsd;
         go.goParam=goParam;
         go.densParam=densParam;
+        rcoef = corrcoef(stmeaninterpstv(go.sMS,go.tME,go.ms,go.mt,obs.XY),obs.vals);
+        go.r2 = rcoef(1,2)^2;
         save([goDir '/' goFile],'go');
 
         if goPlot>=1

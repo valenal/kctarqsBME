@@ -1,7 +1,7 @@
 function dt = getdts(tk,tave) 
     % get date string in dt
     if tave == 'Y'
-        dt = 2018;
+        dt = '2018';
     elseif tave == 'M'
         mth = mod(tk,12);
         yr = (1970+fix(tk/12));
@@ -10,7 +10,7 @@ function dt = getdts(tk,tave)
             yr = yr - 1;
             mth = 12;
         end
-        dt = yr*100+mth;
+        dt = num2str(yr*100+mth);
     elseif tave == 'D'
         dt = datestr(datetime(tk*24*3600, 'convertfrom','posixtime'),'yyyymmdd');
     elseif tave == 'H'
@@ -19,4 +19,5 @@ function dt = getdts(tk,tave)
         dt = datestr(datetime(tk*60, 'convertfrom','posixtime'),'yyyymmddHHMM');
     end
 
+    dt = str2double(dt);
 end 

@@ -14,8 +14,8 @@ function cov=getCOV(obs,go,covPlot)
     % set the cov filename
     covFile=sprintf('%scov_%save_go%s.mat',obs.name,obs.tave,go.scenario);
     
-    if false
-    %if exist([covDir '/' covFile])==2
+    %if false
+    if exist([covDir '/' covFile])==2
         load([covDir '/' covFile]); % loads cov (the covariance) if it was already estimated
     else                          % else estimate the cov and save it
         switch go.scenario

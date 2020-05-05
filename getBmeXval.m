@@ -38,11 +38,15 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
             xh = Z-goh; %obs
     end
 
-    %groupType = 'cluster'; %k,cluster,month
-    groupType = 'month'; %k,cluster,month,
+    groupType = '2fold'; %k,cluster,month,2fold
     switch groupType
-        case {'cluster','month'}
-            grp = obs.(groupType);
+        case {'cluster','month','2fold'}
+            if strcmp(groupType,'2fold')
+                grp = obs.cluster;
+                grp = int8(grp < 5);
+            else
+                grp = obs.(groupType);
+            end
             CVO.uniqueGroup = unique(grp);
             CVO.NumTestSets = size(CVO.uniqueGroup,1);
             CVO.TestSize = histc(grp,CVO.uniqueGroup);
@@ -85,7 +89,7 @@ function [mae,mse,nrmse,me,r2,r2std]=getBmeXval(obs,go,cs,zs,vs,covmodel,covpara
     for i = 1:CVO.NumTestSets
         
         switch groupType
-            case {'cluster','month'}
+            case {'cluster','month','2fold'}
                 grpNum = CVO.uniqueGroup(i);
                 trIdx = grpNum ~= grp; % training index
                 teIdx = grpNum == grp;     % test index 

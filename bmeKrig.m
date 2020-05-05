@@ -28,7 +28,7 @@ function bmeKrig(tA,goScenario,oname,tnum,eks)
     
     runBME  = 1;
     plotgo =  0;
-    plotcov = 1;
+    plotcov = 0;
     plotbme = 1;
     %gtag = '40m_10min10'; %hardcoded
     %rmOL = 'True';        %hardcoded
