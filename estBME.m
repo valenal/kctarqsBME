@@ -83,8 +83,9 @@ function estBME(obs,go,cov,tkVec,BMEsPlot,estimateAtGrid)
     nl=[];
     limi=[];
     probdens=[];
-    
-    [mae,mse,nrmse,me,r2,r2std]= getBmeXval(obs,go,cs,xs,vs,cov.covmodel,cov.covparam,nhmax,nsmax,dmax,order,options);
+   
+    %run crossval
+    %[mae,mse,nrmse,me,r2,r2std]= getBmeXval(obs,go,cs,xs,vs,cov.covmodel,cov.covparam,nhmax,nsmax,dmax,order,options);
 
     for i=1:length(tkVec)
         tk=tkVec(i);

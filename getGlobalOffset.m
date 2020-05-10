@@ -49,7 +49,7 @@ function go=getGlobalOffset(obs,goScenario,goPlot)
               datXY = obs.XY;
               datvals = obs.vals;
             case '1'
-              goParam=[200000 100000 200000 100000 0];
+              goParam=[2e20 1e20 2e20 1e20 0];
               densParam=[inclvoronoi inclgrid nxpix nypix densifytME tMEtimeStep];
               datXY = obs.XY;
               datvals = obs.vals;
@@ -130,7 +130,7 @@ function go=getGlobalOffset(obs,goScenario,goPlot)
         go.goParam=goParam;
         go.densParam=densParam;
         rcoef = corrcoef(stmeaninterpstv(go.sMS,go.tME,go.ms,go.mt,obs.XY),obs.vals);
-        go.r2 = rcoef(1,2)^2;
+        go.r2 = rcoef(1,2).^2;
         save([goDir '/' goFile],'go');
 
         if goPlot>=1
